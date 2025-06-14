@@ -49,27 +49,30 @@ public class RegistroService {
         for (Row row : sheet) {
             if (row.getRowNum() == 0) continue; // saltar encabezado
             try {
+                String email = getStringValue(row.getCell(1));
                 String dni = getStringValue(row.getCell(2));
                 String celular = getStringValue(row.getCell(3));
                 String nombreCompleto = getStringValue(row.getCell(4));
                 String edadStr = getStringValue(row.getCell(5));
-                String distrito = getStringValue(row.getCell(7));
-                String carrera = getStringValue(row.getCell(7));
+                String distrito = getStringValue(row.getCell(6));
+                String carrera = getStringValue(row.getCell(6));
 
                 if (dni.isBlank() || nombreCompleto.isBlank()) {
                     System.out.println("✘ Fila " + row.getRowNum() + " omitida (DNI o nombre vacío)");
                     continue;
                 }
 
-                Voluntario voluntario = voluntarioRepository.findByDni(dni)
-                        .orElseGet(() -> {
-                            Voluntario v = new Voluntario();
-                            v.setDni(dni);
-                            return v;
-                        });
+                boolean nuevo=false;
+                Voluntario voluntario = voluntarioRepository.findByDni(dni).orElse(null);
+                if (voluntario == null) {
+                    voluntario = new Voluntario();
+                    voluntario.setDni(dni);
+                    nuevo = true;
+                }
 
                 voluntario.setNombreCompleto(nombreCompleto);
                 voluntario.setCelular(celular);
+                voluntario.setEmail(email);
                 try {
                     // Quitar palabras como "años", espacios, etc.
                     String edadLimpia = edadStr.replaceAll("[^0-9]", ""); // solo conserva dígitos
@@ -92,6 +95,7 @@ public class RegistroService {
                 participacionRepo.save(p);
 
                 System.out.println("✔ Voluntario registrado: " + nombreCompleto);
+                System.out.println((nuevo ? "✔ Voluntario nuevo: " : "✎ Voluntario actualizado: ") + nombreCompleto);
             } catch (Exception e) {
                 System.out.println("✘ Error al procesar fila: " + row.getRowNum() + ". Causa: " + e.getMessage());
             }
